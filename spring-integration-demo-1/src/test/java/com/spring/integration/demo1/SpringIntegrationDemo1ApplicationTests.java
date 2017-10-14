@@ -29,6 +29,10 @@ public class SpringIntegrationDemo1ApplicationTests {
 	@Qualifier("queueChannel")
 	private MessageChannel queueChannel;
 	
+	@Autowired
+	@Qualifier("publishSubscribeChannel")
+	private MessageChannel publishSubscribeChannel;
+	
 	private Message<String> messageHolaMundo = MessageBuilder.withPayload("HOLA MUNDO").build();
 	
 	@Before
@@ -43,15 +47,21 @@ public class SpringIntegrationDemo1ApplicationTests {
 
 	@Test
 	@Ignore
-	public void test1() {
+	public void testDirectChannel() {
 		template.send(directChannel, messageHolaMundo);
 	}
 
 	@Test
-	public void test2(){
+	@Ignore
+	public void testQueueChannel(){
 		template.send(queueChannel, messageHolaMundo);
 		
 		Message<?> message = template.receive(queueChannel);
 		System.out.println("message: " + (message == null ? message : message.getPayload()));
+	}
+	
+	@Test
+	public void testPublishSubscribeChannel(){
+		template.send(publishSubscribeChannel, messageHolaMundo);
 	}
 }
