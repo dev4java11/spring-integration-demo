@@ -144,4 +144,7 @@ public class SpringIntegrationDemo1Application {
 		channel.addInterceptor(myChannelInterceptor());
 		return channel;
 	}
+	
+	
+	
 }
