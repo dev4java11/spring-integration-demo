@@ -3,13 +3,20 @@ package com.spring.integration.demo1;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.integration.channel.DirectChannel;
+import org.springframework.integration.channel.ExecutorChannel;
+import org.springframework.integration.channel.PriorityChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.channel.QueueChannel;
+import org.springframework.integration.channel.RendezvousChannel;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.integration.handler.MethodInvokingMessageHandler;
 
 import com.spring.integration.demo1.invoker.SuscriberInvoker;
+import com.spring.integration.demo1.util.MessagePriorityHeaderComparator;
+import com.spring.integration.demo1.util.MyChannelInterceptor;
 
 @SpringBootApplication
 public class SpringIntegrationDemo1Application {
@@ -81,4 +88,60 @@ public class SpringIntegrationDemo1Application {
 	
 	/** EXECUTOR CHANNEL **/
 	
+	@Bean
+	public MethodInvokingMessageHandler executorSuscriberInvoker(){
+		MethodInvokingMessageHandler invoker = new MethodInvokingMessageHandler(new SuscriberInvoker(), SuscriberInvoker.class.getMethods()[0]);
+		return invoker;
+	}
+	
+	@Bean
+	public TaskExecutor taskExecutor(){
+		SyncTaskExecutor executor = new SyncTaskExecutor();
+		return executor;
+	}
+	
+	@Bean
+	public ExecutorChannel executorChannel(){
+		ExecutorChannel channel = new ExecutorChannel(taskExecutor());
+		channel.subscribe(executorSuscriberInvoker());
+		return channel;
+	}
+	
+	/** PRIORITY CHANNEL **/
+	
+	@Bean
+	public MessagePriorityHeaderComparator messagePriorityHeaderComparator(){
+		MessagePriorityHeaderComparator comparator = new MessagePriorityHeaderComparator();
+		return comparator;
+	}
+	
+	@Bean
+	public PriorityChannel priorityChannel(){
+		PriorityChannel channel = new PriorityChannel(messagePriorityHeaderComparator());
+		return channel;
+	}
+	
+	/** RENDEZVOUS CHANNEL **/
+	
+	@Bean
+	public RendezvousChannel rendezvousChannel(){
+		RendezvousChannel channel = new RendezvousChannel();
+		return channel;
+	}
+	
+	/** CHANNEL INTERCEPTOR **/
+	
+	@Bean
+	public MyChannelInterceptor myChannelInterceptor(){
+		MyChannelInterceptor interceptor = new MyChannelInterceptor();
+		return interceptor;
+	}
+	
+	@Bean
+	public DirectChannel directChannelWithInterceptor(){
+		DirectChannel channel = new DirectChannel();
+		channel.subscribe(suscriberInvoker());
+		channel.addInterceptor(myChannelInterceptor());
+		return channel;
+	}
 }
